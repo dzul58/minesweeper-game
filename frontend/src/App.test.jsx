@@ -17,8 +17,8 @@ describe("App Component", () => {
 
     expect(screen.getByText("Minesweeper Game")).toBeInTheDocument();
     expect(screen.getByText("Start New Game")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ukuran Grid:")).toBeInTheDocument();
-    expect(screen.getByLabelText("Jumlah Mines:")).toBeInTheDocument();
+    expect(screen.getByLabelText("Grid Size:")).toBeInTheDocument();
+    expect(screen.getByLabelText("Number of Mines:")).toBeInTheDocument();
   });
 
   it("creates new game when Start New Game button is clicked", async () => {
@@ -137,8 +137,8 @@ describe("App Component", () => {
   it("updates grid size and mines count correctly", () => {
     render(<App />);
 
-    const sizeInput = screen.getByLabelText("Ukuran Grid:");
-    const minesInput = screen.getByLabelText("Jumlah Mines:");
+    const sizeInput = screen.getByLabelText("Grid Size:");
+    const minesInput = screen.getByLabelText("Number of Mines:");
 
     fireEvent.change(sizeInput, { target: { value: "10" } });
     fireEvent.change(minesInput, { target: { value: "15" } });

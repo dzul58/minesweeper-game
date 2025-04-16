@@ -29,6 +29,18 @@ class Controllers {
           .json({ error: "Mines must be a positive number" });
       }
 
+      if (size > 20) {
+        return res
+          .status(400)
+          .json({ error: "Grid size cannot exceed 20" });
+      }
+
+      if (typeof mines !== "number" || mines <= 0) {
+        return res
+          .status(400)
+          .json({ error: "Mines must be a positive number" });
+      }
+
       if (mines >= size * size) {
         return res.status(400).json({
           error: "Number of mines must be less than the total number of cells",

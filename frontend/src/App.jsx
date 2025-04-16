@@ -13,6 +13,12 @@ function App() {
 
   const createNewGame = async () => {
     try {
+      // Validate size before sending request
+      if (size > 20) {
+        setError("Grid size cannot exceed 20");
+        return;
+      }
+      
       const newGameId = Date.now().toString();
       const response = await axios.post(`${API_URL}/games`, {
         gameId: newGameId,
@@ -68,6 +74,18 @@ function App() {
     }
   }, [gameId]);
 
+  const handleSizeChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value > 20) {
+      setError("Grid size cannot exceed 20");
+      return;
+    }
+    setSize(value);
+    if (error === "Grid size cannot exceed 20") {
+      setError("");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -83,7 +101,7 @@ function App() {
                 <input
                   type="number"
                   value={size}
-                  onChange={(e) => setSize(parseInt(e.target.value))}
+                  onChange={handleSizeChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   min="5"
                   max="20"

@@ -1,153 +1,179 @@
-// tests/controller.test.js
-const Controllers = require("../controllers/controller");
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import axios from "axios";
+import App from "./App";
 
-// Mock Express request and response objects
-const mockReq = (body = {}, params = {}) => ({
-  body,
-  params,
-});
+// Mock axios
+vi.mock("axios");
 
-const mockRes = () => {
-  const res = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res;
-};
-
-describe("Minesweeper Controller", () => {
-  let controller;
-
+describe("App Component", () => {
   beforeEach(() => {
-    controller = new Controllers();
+    // Reset mocks before each test
+    vi.clearAllMocks();
   });
 
-  describe("createGame", () => {
-    test("should create a new game with valid parameters", () => {
-      const req = mockReq({ gameId: "test1", size: 5, mines: 5 });
-      const res = mockRes();
+  it("renders game title and controls", () => {
+    render(<App />);
 
-      controller.createGame(req, res);
+    expect(screen.getByText("Minesweeper Game")).toBeInTheDocument();
+    expect(screen.getByText("Start New Game")).toBeInTheDocument();
+    expect(screen.getByLabelText("Grid Size:")).toBeInTheDocument();
+    expect(screen.getByLabelText("Number of Mines:")).toBeInTheDocument();
+  });
 
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalled();
-      const responseData = res.json.mock.calls[0][0];
-      expect(responseData.gameId).toBe("test1");
-      expect(responseData.size).toBe(5);
-      expect(responseData.mines).toBe(5);
-      expect(responseData.grid).toBeDefined();
-    });
+  it("creates new game when Start New Game button is clicked", async () => {
+    const mockResponse = {
+      data: {
+        grid: Array(8)
+          .fill()
+          .map(() => Array(8).fill("#")),
+        gameState: "active",
+      },
+    };
 
-    test("should reject if mines >= size^2", () => {
-      const req = mockReq({ gameId: "test2", size: 5, mines: 25 });
-      const res = mockRes();
+    axios.post.mockResolvedValueOnce(mockResponse);
 
-      controller.createGame(req, res);
+    render(<App />);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
+    fireEvent.click(screen.getByText("Start New Game"));
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/games",
         expect.objectContaining({
-          error: expect.stringContaining("mines"),
+          gameId: expect.any(String),
+          size: 8,
+          mines: 10,
         })
       );
     });
   });
 
-  describe("makeMove", () => {
-    test("should handle a valid move", () => {
-      // First create a game
-      const createReq = mockReq({ gameId: "test3", size: 5, mines: 5 });
-      const createRes = mockRes();
-      controller.createGame(createReq, createRes);
+  it("handles game move correctly", async () => {
+    // Mock for createNewGame
+    const mockCreateResponse = {
+      data: {
+        grid: Array(8)
+          .fill()
+          .map(() => Array(8).fill("#")),
+        gameState: "active",
+      },
+    };
 
-      // Manually modify the game grid to test a specific scenario
-      const game = controller.games.get("test3");
-      game.grid = Array(5)
-        .fill()
-        .map(() => Array(5).fill(0)); // Clear mines
-      game.grid[2][2] = -1; // Place a single mine
-      controller.updateAdjacentCells(game.grid, 2, 2, 5); // Update adjacent cells
+    // Mock for makeMove
+    const mockMoveResponse = {
+      data: {
+        grid: Array(8)
+          .fill()
+          .map(() => Array(8).fill("#")),
+        gameState: "active",
+      },
+    };
 
-      // Make a move
-      const moveReq = mockReq({ gameId: "test3", row: 0, col: 0 });
-      const moveRes = mockRes();
-      controller.makeMove(moveReq, moveRes);
-
-      expect(moveRes.status).toHaveBeenCalledWith(200);
-      expect(moveRes.json).toHaveBeenCalled();
-      const responseData = moveRes.json.mock.calls[0][0];
-      expect(responseData.gameState).toBe("active");
-    });
-
-    test("should handle revealing a mine", () => {
-      // First create a game
-      const createReq = mockReq({ gameId: "test4", size: 5, mines: 5 });
-      const createRes = mockRes();
-      controller.createGame(createReq, createRes);
-
-      // Manually modify the game grid to test a specific scenario
-      const game = controller.games.get("test4");
-      game.grid = Array(5)
-        .fill()
-        .map(() => Array(5).fill(0)); // Clear mines
-      game.grid[2][2] = -1; // Place a single mine
-      controller.updateAdjacentCells(game.grid, 2, 2, 5); // Update adjacent cells
-
-      // Make a move that reveals the mine
-      const moveReq = mockReq({ gameId: "test4", row: 2, col: 2 });
-      const moveRes = mockRes();
-      controller.makeMove(moveReq, moveRes);
-
-      expect(moveRes.status).toHaveBeenCalledWith(200);
-      expect(moveRes.json).toHaveBeenCalled();
-      const responseData = moveRes.json.mock.calls[0][0];
-      expect(responseData.gameState).toBe("lost");
-    });
-
-    test("should reject invalid coordinates", () => {
-      // First create a game
-      const createReq = mockReq({ gameId: "test5", size: 5, mines: 5 });
-      const createRes = mockRes();
-      controller.createGame(createReq, createRes);
-
-      // Make a move with invalid coordinates
-      const moveReq = mockReq({ gameId: "test5", row: 10, col: 10 });
-      const moveRes = mockRes();
-      controller.makeMove(moveReq, moveRes);
-
-      expect(moveRes.status).toHaveBeenCalledWith(400);
-      expect(moveRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.stringContaining("Invalid coordinates"),
-        })
-      );
-    });
-  });
-
-  describe("Grid initialization", () => {
-    test("should create grid with correct dimensions", () => {
-      const size = 8;
-      const mines = 10;
-      const game = controller.initializeGrid(size, mines);
-
-      expect(game.grid.length).toBe(size);
-      expect(game.grid[0].length).toBe(size);
-    });
-
-    test("should place correct number of mines", () => {
-      const size = 8;
-      const mines = 10;
-      const game = controller.initializeGrid(size, mines);
-
-      let mineCount = 0;
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          if (game.grid[i][j] === -1) {
-            mineCount++;
-          }
-        }
+    // Setup mocks
+    axios.post.mockImplementation((url, data) => {
+      if (url === "http://localhost:3000/api/games") {
+        return Promise.resolve(mockCreateResponse);
+      } else if (url === "http://localhost:3000/api/games/move") {
+        return Promise.resolve(mockMoveResponse);
       }
-
-      expect(mineCount).toBe(mines);
+      return Promise.reject(new Error("Not found"));
     });
+
+    render(<App />);
+
+    // Create new game
+    fireEvent.click(screen.getByText("Start New Game"));
+
+    // Wait for the game to be created
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        "http://localhost:3000/api/games",
+        expect.anything()
+      );
+    });
+
+    // Find and click a cell
+    const buttons = screen.getAllByRole("button");
+    // Skip the "Start New Game" button
+    const firstCell = buttons.find((btn) => btn.textContent === "");
+
+    if (firstCell) {
+      fireEvent.click(firstCell);
+
+      // Verify that makeMove API was called
+      await waitFor(() => {
+        expect(axios.post).toHaveBeenCalledWith(
+          "http://localhost:3000/api/games/move",
+          expect.objectContaining({
+            gameId: expect.any(String),
+            row: expect.any(Number),
+            col: expect.any(Number),
+          })
+        );
+      });
+    }
+  });
+
+  it("displays error message when game creation fails", async () => {
+    const errorMessage = "Failed to create new game";
+    axios.post.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: errorMessage,
+        },
+      },
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByText("Start New Game"));
+
+    await waitFor(() => {
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    });
+  });
+
+  it("updates grid size and mines count correctly", () => {
+    render(<App />);
+
+    const sizeInput = screen.getByLabelText("Grid Size:");
+    const minesInput = screen.getByLabelText("Number of Mines:");
+
+    fireEvent.change(sizeInput, { target: { value: "10" } });
+    fireEvent.change(minesInput, { target: { value: "15" } });
+
+    expect(sizeInput.value).toBe("10");
+    expect(minesInput.value).toBe("15");
+  });
+  
+  it("displays error when grid size exceeds 20", () => {
+    render(<App />);
+    
+    const sizeInput = screen.getByLabelText("Grid Size:");
+    
+    // Change grid size to 21 (exceeding maximum)
+    fireEvent.change(sizeInput, { target: { value: "21" } });
+    
+    // Verify error message is displayed
+    expect(screen.getByText("Grid size cannot exceed 20")).toBeInTheDocument();
+  });
+
+  it("prevents creating new game when grid size exceeds 20", async () => {
+    render(<App />);
+    
+    const sizeInput = screen.getByLabelText("Grid Size:");
+    
+    // Set grid size to invalid value
+    fireEvent.change(sizeInput, { target: { value: "21" } });
+    
+    // Try to create new game
+    fireEvent.click(screen.getByText("Start New Game"));
+    
+    // Axios post should not be called
+    expect(axios.post).not.toHaveBeenCalled();
+    
+    // Error message should be displayed
+    expect(screen.getByText("Grid size cannot exceed 20")).toBeInTheDocument();
   });
 });

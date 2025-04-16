@@ -25,7 +25,7 @@ function App() {
       setGameState("active");
       setError("");
     } catch (err) {
-      setError(err.response?.data?.error || "Gagal membuat game baru");
+      setError(err.response?.data?.error || "Failed to create new game");
     }
   };
 
@@ -46,7 +46,7 @@ function App() {
         setError(`Game over! You ${response.data.gameState}`);
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Gagal melakukan move");
+      setError(err.response?.data?.error || "Failed to make move");
     }
   };
 
@@ -58,7 +58,7 @@ function App() {
       setGrid(response.data.grid);
       setGameState(response.data.gameState);
     } catch (err) {
-      setError(err.response?.data?.error || "Gagal mendapatkan status game");
+      setError(err.response?.data?.error || "Failed to get game status");
     }
   };
 
@@ -79,7 +79,7 @@ function App() {
           <div className="flex justify-between items-center mb-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Ukuran Grid:
+                Grid Size:
                 <input
                   type="number"
                   value={size}
@@ -90,7 +90,7 @@ function App() {
                 />
               </label>
               <label className="block text-sm font-medium text-gray-700">
-                Jumlah Mines:
+                Number of Mines:
                 <input
                   type="number"
                   value={mines}

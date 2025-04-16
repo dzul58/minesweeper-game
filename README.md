@@ -1,6 +1,6 @@
 # Minesweeper Game
 
-A classic Minesweeper application with React frontend and Express backend.
+A Minesweeper application with React frontend and Express backend.
 
 ## Project Structure
 
@@ -38,7 +38,7 @@ minesweeper-game/
 3. Run the server:
 
    ```bash
-   node app.js
+   npx nodemon app.js
    ```
 
    The server will run at http://localhost:3000
@@ -137,11 +137,70 @@ minesweeper-game/
 
 ### Backend Tests
 
-Navigate to the backend directory and run:
+The backend uses Jest for testing. To run the tests:
 
-```bash
-npm test
-```
+1. Navigate to the backend directory:
+
+   ```bash
+   cd backend
+   ```
+
+2. Install dependencies (if not already installed):
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+   ```bash
+   npm test
+   ```
+
+This will run all tests in the `tests` directory, including:
+
+- Game creation tests
+- Game move tests
+- Grid initialization tests
+
+The tests verify that:
+
+- Games can be created with valid parameters
+- Invalid game parameters are rejected
+- Moves are processed correctly
+- Winning and losing conditions work as expected
+- The grid is properly initialized with the correct number of mines
+
+### Frontend Tests
+
+The frontend also uses Jest for testing React components. To run the tests:
+
+1. Navigate to the frontend directory:
+
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies (if not already installed):
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+   ```bash
+   npm test
+   ```
+
+The frontend tests verify:
+
+- Component rendering
+- Game creation functionality
+- Move handling
+- Error message display
+- Grid size and mines count updates
+- User interaction with the game board
+
+The tests use React Testing Library to simulate user interactions and verify component behavior.
 
 ## Features
 
@@ -157,6 +216,7 @@ npm test
 - React
 - Axios for HTTP requests
 - Tailwind CSS for styling
+- Jest and React Testing Library for testing
 
 ### Backend
 

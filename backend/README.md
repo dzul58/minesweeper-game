@@ -10,7 +10,7 @@ Install dependencies:
 npm install
 ```
 
-4. Start the server:
+Start the server:
 
 ```bash
 npx nodemon app.js
